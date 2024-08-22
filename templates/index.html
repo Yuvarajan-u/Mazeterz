@@ -32,10 +32,35 @@
                     <h5 class="modal-title" id="resultModalLabel">Prediction Result</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    <h6>Department: <span id="modalDepartment"></span></h6>
-                    <canvas id="pieChart"></canvas>
+                <div class="container mt-5">
+                    {% if result %}
+                        {% if 'success' in result %}
+                            <div class="alert alert-success">
+                                <strong>Success!</strong> You can find a seat in your same department.
+                            </div>
+                        {% elif 'failure' in result %}
+                            <div class="alert alert-danger">
+                                <strong>Failure!</strong> Please see the available seats in other departments (already in sorted probability):
+                            </div>
+                            <table class="table table-striped mt-3">
+                                <thead>
+                                    <tr>
+                                        <th>Department</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for department, seats in result['failure'].items() %}
+                                        <tr>
+                                            <td>{{ department }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% endif %}
+                    {% endif %}
                 </div>
+                
+                
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
