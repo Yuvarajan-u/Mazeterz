@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Department Prediction</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -32,35 +31,10 @@
                     <h5 class="modal-title" id="resultModalLabel">Prediction Result</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="container mt-5">
-                    {% if result %}
-                        {% if 'success' in result %}
-                            <div class="alert alert-success">
-                                <strong>Success!</strong> You can find a seat in your same department.
-                            </div>
-                        {% elif 'failure' in result %}
-                            <div class="alert alert-danger">
-                                <strong>Failure!</strong> Please see the available seats in other departments (already in sorted probability):
-                            </div>
-                            <table class="table table-striped mt-3">
-                                <thead>
-                                    <tr>
-                                        <th>Department</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for department, seats in result['failure'].items() %}
-                                        <tr>
-                                            <td>{{ department }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        {% endif %}
-                    {% endif %}
+                <div class="modal-body">
+                    <h6 id="modalMessage"></h6>
+                    <div id="failureTableContainer"></div>
                 </div>
-                
-                
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
@@ -69,7 +43,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <script>
@@ -83,30 +56,23 @@
                     url: '/',
                     data: {department: departmentName},
                     success: function(data) {
-                        $('#modalDepartment').text(data.department);
-                        const ctx = document.getElementById('pieChart').getContext('2d');
-                        new Chart(ctx, {
-                            type: 'pie',
-                            data: {
-                                labels: Object.keys(data.result),
-                                datasets: [{
-                                    data: Object.values(data.result),
-                                    backgroundColor: [
-                                        'rgba(255, 99, 132, 0.2)',
-                                        'rgba(54, 162, 235, 0.2)',
-                                        'rgba(255, 206, 86, 0.2)',
-                                        'rgba(75, 192, 192, 0.2)'
-                                    ],
-                                    borderColor: [
-                                        'rgba(255, 99, 132, 1)',
-                                        'rgba(54, 162, 235, 1)',
-                                        'rgba(255, 206, 86, 1)',
-                                        'rgba(75, 192, 192, 1)'
-                                    ],
-                                    borderWidth: 1
-                                }]
-                            }
-                        });
+                        var result = data.result;
+
+                        if ('success' in result) {
+                            $('#modalMessage').text(result.success);
+                            $('#failureTableContainer').html('');
+                        } else if ('failure' in result) {
+                            $('#modalMessage').text("Please see the available seats in other departments:");
+                            
+                            var table = '<table class="table table-striped mt-3"><thead><tr><th>Department</th><th>Probability</th></tr></thead><tbody>';
+                            $.each(result.failure, function(department, probability) {
+                                table += '<tr><td>' + department + '</td><td>' + probability.toFixed(2) + '</td></tr>';
+                            });
+                            table += '</tbody></table>';
+                            
+                            $('#failureTableContainer').html(table);
+                        }
+
                         var myModal = new bootstrap.Modal(document.getElementById('resultModal'));
                         myModal.show();
                     }
