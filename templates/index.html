@@ -8,7 +8,14 @@
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <a class="navbar-brand" href="/">Department Prediction</a>
+        <a class="navbar-brand" href="/">Mazeterez</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="#" id="searchDate">Search Seats</a>
+                </li>
+            </ul>
+        </div>
     </nav>
     <div class="container mt-5 d-flex justify-content-center align-items-center" style="min-height: 70vh;">
         <div class="col-md-6">
@@ -23,7 +30,35 @@
         </div>
     </div>
 
-    <!-- Modal -->
+    <!-- Date and Department Modal -->
+    <div class="modal fade" id="dateModal" tabindex="-1" aria-labelledby="dateModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="dateModalLabel">Search Seats by Date and Department</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="searchForm">
+                        <div class="mb-3">
+                            <label for="dateInput" class="form-label">Select Date</label>
+                            <input type="date" class="form-control" id="dateInput" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="departmentInput" class="form-label">Department Name</label>
+                            <input type="text" class="form-control" id="departmentInput" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="searchSeatsByDate()">Search</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Result Modal -->
     <div class="modal fade" id="resultModal" tabindex="-1" aria-labelledby="resultModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -47,6 +82,7 @@
 
     <script>
         $(document).ready(function(){
+            // Handle department form submission
             $('#departmentForm').on('submit', function(event){
                 event.preventDefault();
                 var departmentName = $('#department').val();
@@ -78,7 +114,51 @@
                     }
                 });
             });
+
+            // Handle date and department search
+            $('#searchDate').on('click', function(){
+                var myModal = new bootstrap.Modal(document.getElementById('dateModal'));
+                myModal.show();
+            });
         });
+
+        function searchSeatsByDate() {
+            var date = $('#dateInput').val();
+            var departmentName = $('#departmentInput').val();
+
+            if (!date || !departmentName) {
+                alert("Please select a date and enter a department name.");
+                return;
+            }
+
+            $.ajax({
+                type: 'POST',
+                url: '/search-date',
+                data: {date: date, department: departmentName},
+                success: function(data) {
+                    $('#dateModal').modal('hide');
+                    var result = data.result;
+
+                    if ('success' in result) {
+                        $('#modalMessage').text(result.success);
+                        $('#failureTableContainer').html('');
+                    } else if ('failure' in result) {
+                        $('#modalMessage').text("Please see the available seats in other departments:");
+                        
+                        var table = '<table class="table table-striped mt-3"><thead><tr><th>Department</th><th>Probability</th></tr></thead><tbody>';
+                        $.each(result.failure, function(department, probability) {
+                            table += '<tr><td>' + department + '</td><td>' + probability.toFixed(2) + '</td></tr>';
+                        });
+                        table += '</tbody></table>';
+                        
+                        $('#failureTableContainer').html(table);
+                    }
+
+                    var myModal = new bootstrap.Modal(document.getElementById('resultModal'));
+                    myModal.show();
+                }
+            });
+        }
     </script>
 </body>
 </html>
